@@ -1,0 +1,46 @@
+{
+    "compilerOptions": {
+        // 指定 ECMAScript 目标版本
+        "target": "ES2022",
+        // 指定模块系统
+        "module": "ESNext",
+        // 指定模块解析策略
+        "moduleResolution": "node",
+        // 输出目录
+        "outDir": "./dist",
+        // 源码根目录
+        "rootDir": "./src",
+        // 启用所有严格类型检查选项
+        "strict": true,
+        // 允许默认导入非ES模块
+        "esModuleInterop": true,
+        // 跳过库文件的类型检查
+        "skipLibCheck": true,
+        // 强制文件名大小写一致
+        "forceConsistentCasingInFileNames": true,
+        // 生成声明文件
+        "declaration": true,
+        // 生成声明文件的 source map
+        "declarationMap": true,
+        // 生成 source map 文件
+        "sourceMap": true,
+        // 允许导入 JSON 模块
+        "resolveJsonModule": true,
+        // 允许合成默认导入
+        "allowSyntheticDefaultImports": true,
+        // 启用实验性的装饰器
+        "experimentalDecorators": true,
+        // 启用装饰器元数据
+        "emitDecoratorMetadata": true
+    },
+    // 包含的文件
+    "include": [
+        "src/**/*"
+    ],
+    // 排除的文件
+    "exclude": [
+        "node_modules",
+        "dist",
+        "**/*.test.ts"
+    ]
+}
