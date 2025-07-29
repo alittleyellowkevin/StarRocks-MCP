@@ -9,12 +9,14 @@ import { SqlExecutor } from '../tools/SqlExecutor.js';
 import { SqlValidator } from '../utils/SqlValidator.js';
 import { StarRocksConfig } from '../interface/types.js';
 
+// StarRocksMCPServer 类，负责管理 StarRocks MCP 服务
 export class StarRocksMCPServer {
-    private server: Server;
-    private connection: StarRocksConnection;
-    private executor: SqlExecutor;
-    private config: StarRocksConfig;
+    private server: Server; // MCP 协议服务端实例
+    private connection: StarRocksConnection; // StarRocks 数据库连接实例
+    private executor: SqlExecutor; // SQL 执行器
+    private config: StarRocksConfig; // 数据库配置
 
+    // 构造函数，初始化配置、连接、执行器和 MCP 服务端
     constructor(config: StarRocksConfig) {
         this.config = config;
         this.connection = new StarRocksConnection(config);
@@ -27,11 +29,12 @@ export class StarRocksMCPServer {
             }
         );
 
-        this.setupToolHandlers();
+        this.setupToolHandlers(); // 设置工具处理器
     }
 
+    // 注册 MCP 工具的处理器，包括工具列表和工具调用
     private setupToolHandlers(): void {
-        // List tools
+        // 工具列表请求处理器
         this.server.setRequestHandler(ListToolsRequestSchema, async () => {
             return {
                 tools: [
@@ -123,11 +126,12 @@ export class StarRocksMCPServer {
             };
         });
 
-        // Call tool
+        // 工具调用请求处理器
         this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
             const { name, arguments: args } = request.params;
 
             try {
+                // 根据工具名称分发到不同的处理函数
                 switch (name) {
                     case 'run_sql_query':
                         return await this.handleRunSqlQuery(args);
@@ -145,6 +149,7 @@ export class StarRocksMCPServer {
                         throw new Error(`Unknown tool: ${name}`);
                 }
             } catch (error) {
+                // 工具执行出错时返回错误信息
                 console.error(`Error executing tool ${name}:`, error);
                 return {
                     content: [
@@ -158,6 +163,7 @@ export class StarRocksMCPServer {
         });
     }
 
+    // 处理只读 SQL 查询（SELECT）
     private async handleRunSqlQuery(args: any): Promise<any> {
         const { query } = args;
 
@@ -165,7 +171,7 @@ export class StarRocksMCPServer {
             throw new Error('Query parameter is required and must be a string');
         }
 
-        // Validate that it's a SELECT query
+        // 校验是否为 SELECT 查询
         if (!SqlValidator.isSelectQuery(query)) {
             throw new Error('Only SELECT queries are allowed for this tool');
         }
@@ -186,6 +192,7 @@ export class StarRocksMCPServer {
         };
     }
 
+    // 处理建表操作
     private async handleCreateTable(args: any): Promise<any> {
         const { query } = args;
 
@@ -209,6 +216,7 @@ export class StarRocksMCPServer {
         };
     }
 
+    // 处理插入数据操作
     private async handleInsertData(args: any): Promise<any> {
         const { query } = args;
 
@@ -232,6 +240,7 @@ export class StarRocksMCPServer {
         };
     }
 
+    // 处理更新数据操作
     private async handleUpdateData(args: any): Promise<any> {
         const { query } = args;
 
@@ -255,6 +264,7 @@ export class StarRocksMCPServer {
         };
     }
 
+    // 处理删除数据操作
     private async handleDeleteData(args: any): Promise<any> {
         const { query } = args;
 
@@ -278,6 +288,7 @@ export class StarRocksMCPServer {
         };
     }
 
+    // 处理任意非 SELECT 的 SQL 执行
     private async handleExecuteSql(args: any): Promise<any> {
         const { query } = args;
 
@@ -301,6 +312,7 @@ export class StarRocksMCPServer {
         };
     }
 
+    // 初始化数据库连接
     async initialize(): Promise<void> {
         try {
             await this.connection.connect();
@@ -311,12 +323,14 @@ export class StarRocksMCPServer {
         }
     }
 
+    // 启动 MCP 服务，监听 stdio
     async start(): Promise<void> {
         const transport = new StdioServerTransport();
         await this.server.connect(transport);
         console.log('StarRocks MCP Server started');
     }
 
+    // 关闭数据库连接，优雅关闭服务
     async shutdown(): Promise<void> {
         await this.connection.close();
         console.log('StarRocks MCP Server shutdown');
