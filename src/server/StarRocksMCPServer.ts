@@ -3,19 +3,22 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
     CallToolRequestSchema,
     ListToolsRequestSchema,
-    Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import { StarRocksConnection } from '../connection/StarRocksConnection.js';
-import { StarRocksConfig, MCPRequest, MCPResponse } from '../types/index.js';
+import { SqlExecutor } from '../tools/SqlExecutor.js';
+import { SqlValidator } from '../utils/SqlValidator.js';
+import { StarRocksConfig } from '../interface/types.js';
 
 export class StarRocksMCPServer {
     private server: Server;
     private connection: StarRocksConnection;
+    private executor: SqlExecutor;
     private config: StarRocksConfig;
 
     constructor(config: StarRocksConfig) {
         this.config = config;
         this.connection = new StarRocksConnection(config);
+        this.executor = new SqlExecutor(this.connection);
 
         this.server = new Server(
             {
@@ -163,12 +166,11 @@ export class StarRocksMCPServer {
         }
 
         // Validate that it's a SELECT query
-        const trimmedQuery = query.trim().toLowerCase();
-        if (!trimmedQuery.startsWith('select ')) {
+        if (!SqlValidator.isSelectQuery(query)) {
             throw new Error('Only SELECT queries are allowed for this tool');
         }
 
-        const result = await this.connection.query(query);
+        const result = await this.executor.query(query);
 
         if (!result.success) {
             throw new Error(result.error || 'Query execution failed');
@@ -191,7 +193,7 @@ export class StarRocksMCPServer {
             throw new Error('Query parameter is required and must be a string');
         }
 
-        const result = await this.connection.execute(query);
+        const result = await this.executor.execute(query);
 
         if (!result.success) {
             throw new Error(result.error || 'Table creation failed');
@@ -214,7 +216,7 @@ export class StarRocksMCPServer {
             throw new Error('Query parameter is required and must be a string');
         }
 
-        const result = await this.connection.execute(query);
+        const result = await this.executor.execute(query);
 
         if (!result.success) {
             throw new Error(result.error || 'Data insertion failed');
@@ -237,7 +239,7 @@ export class StarRocksMCPServer {
             throw new Error('Query parameter is required and must be a string');
         }
 
-        const result = await this.connection.execute(query);
+        const result = await this.executor.execute(query);
 
         if (!result.success) {
             throw new Error(result.error || 'Data update failed');
@@ -260,7 +262,7 @@ export class StarRocksMCPServer {
             throw new Error('Query parameter is required and must be a string');
         }
 
-        const result = await this.connection.execute(query);
+        const result = await this.executor.execute(query);
 
         if (!result.success) {
             throw new Error(result.error || 'Data deletion failed');
@@ -283,7 +285,7 @@ export class StarRocksMCPServer {
             throw new Error('Query parameter is required and must be a string');
         }
 
-        const result = await this.connection.execute(query);
+        const result = await this.executor.execute(query);
 
         if (!result.success) {
             throw new Error(result.error || 'SQL execution failed');

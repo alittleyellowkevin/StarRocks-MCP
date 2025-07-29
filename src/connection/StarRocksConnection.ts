@@ -1,7 +1,7 @@
 import mysql from 'mysql2/promise';
-import { StarRocksConfig, StarRocksConnection as IStarRocksConnection, QueryResult } from '../types/index.js';
+import { StarRocksConfig } from '../interface/types.js';
 
-export class StarRocksConnection implements IStarRocksConnection {
+export class StarRocksConnection {
     private connection: mysql.Connection | null = null;
     private config: StarRocksConfig;
 
@@ -30,74 +30,6 @@ export class StarRocksConnection implements IStarRocksConnection {
         }
     }
 
-    async query(sql: string, params?: any[]): Promise<QueryResult> {
-        if (!this.connection) {
-            throw new Error('Database connection not established');
-        }
-
-        try {
-            // 使用原始查询，不使用预处理语句
-            const [rows, fields] = await this.connection.query(sql);
-
-            return {
-                success: true,
-                data: rows as any[],
-                columns: fields?.map((field: any) => field.name) || [],
-            };
-        } catch (error) {
-            console.error('Query execution failed:', error);
-            return {
-                success: false,
-                error: error instanceof Error ? error.message : 'Unknown error occurred',
-            };
-        }
-    }
-
-    async execute(sql: string, params?: any[]): Promise<QueryResult> {
-        if (!this.connection) {
-            throw new Error('Database connection not established');
-        }
-
-        try {
-            // 使用原始查询，不使用预处理语句
-            const [result] = await this.connection.query(sql);
-
-            return {
-                success: true,
-                affectedRows: (result as any).affectedRows,
-                insertId: (result as any).insertId,
-                message: (result as any).message,
-            };
-        } catch (error) {
-            console.error('Execute failed:', error);
-            return {
-                success: false,
-                error: error instanceof Error ? error.message : 'Unknown error occurred',
-            };
-        }
-    }
-
-    async beginTransaction(): Promise<void> {
-        if (!this.connection) {
-            throw new Error('Database connection not established');
-        }
-        await this.connection.beginTransaction();
-    }
-
-    async commit(): Promise<void> {
-        if (!this.connection) {
-            throw new Error('Database connection not established');
-        }
-        await this.connection.commit();
-    }
-
-    async rollback(): Promise<void> {
-        if (!this.connection) {
-            throw new Error('Database connection not established');
-        }
-        await this.connection.rollback();
-    }
-
     async close(): Promise<void> {
         if (this.connection) {
             await this.connection.end();
@@ -122,5 +54,15 @@ export class StarRocksConnection implements IStarRocksConnection {
 
     async isConnected(): Promise<boolean> {
         return this.ping();
+    }
+
+    // 获取原始连接对象，供其他模块使用
+    getConnection(): mysql.Connection | null {
+        return this.connection;
+    }
+
+    // 检查连接状态
+    isConnectionEstablished(): boolean {
+        return this.connection !== null;
     }
 } 
